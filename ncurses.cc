@@ -2083,6 +2083,15 @@ class Window : public ObjectWrap {
       //}
       //assert(panel_ == NULL);
     }
+
+  private:
+    void emit (Local<Value> values[], int sizeOfValues) {
+      Local<Value> emit_v = topmost_panel->getWindow()->handle_->Get(emit_symbol);
+      if (!emit_v->IsFunction()) return;
+      Local<Function> emit = Local<Function>::Cast(emit_v);
+
+      emit->Call(topmost_panel->getWindow()->handle_, sizeOfValues, values);
+    }
     
   private:
     void Event (int revents) {
@@ -2093,7 +2102,10 @@ class Window : public ObjectWrap {
       if (revents & EV_READ) {
         int chr;
         char tmp[2];
-        tmp[1] = 0;
+        MEVENT event;
+        
+        mousemask(ALL_MOUSE_EVENTS, NULL);
+
         while ((chr = getch()) != ERR) {
           // 410 == KEY_RESIZE
           if (chr == 410 || !topmost_panel || !topmost_panel->getWindow() || !topmost_panel->getPanel()) {
@@ -2101,15 +2113,35 @@ class Window : public ObjectWrap {
             //  ungetch(chr);
             return;
           }
-          tmp[0] = chr;
-          Local<Value> vChr[3];
-          vChr[0] = String::New("inputChar");
-          vChr[1] = String::New(tmp);
-          vChr[2] = Integer::New(chr);
-          Local<Value> emit_v = topmost_panel->getWindow()->handle_->Get(emit_symbol);
-          if (!emit_v->IsFunction()) return;
-          Local<Function> emit = Local<Function>::Cast(emit_v);
-          emit->Call(topmost_panel->getWindow()->handle_, 3, vChr);
+
+          switch(chr)
+          {
+            case KEY_MOUSE:
+              if(getmouse(&event) == OK)
+              {
+                if(event.bstate & BUTTON1_PRESSED)
+                { 
+                  Local<Value> values[3];
+                  values[0] = String::New("mousePressed");
+                  values[1] = Integer::New(event.x);
+                  values[2] = Integer::New(event.y);
+                  this->emit(values, 3);
+                }
+              }
+            break;
+
+            default:
+              tmp[1] = 0;
+              tmp[0] = chr;
+              
+              Local<Value> values[3];
+              values[0] = String::New("inputChar");
+              values[1] = String::New(tmp);
+              values[2] = Integer::New(chr);
+              this->emit(values, 3);
+            break;
+          }
+
         }
       }
     }

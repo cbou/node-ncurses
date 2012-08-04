@@ -129,6 +129,8 @@ Window Events
 
 * **inputChar**(String, Integer) - Called when the user has pressed a key on the keyboard. The first parameter is a string containing the character and the second parameter is the integer value of the character.
 
+* **mousePressed**(Integer, Integer) - Called when the user has pressed the button 1 on the mouse. The first parameter is an integer containing the x-axes where the click occurs and the second parameter is the y-axe.
+
 
 Window Functions
 ----------------
